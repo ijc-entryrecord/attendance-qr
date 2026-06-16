@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>出席登録</title>
+
+  <!-- QRライブラリ -->
+  <script src="https://unpkg.com/html5-qrcode"></script>
+
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      background: #f4f6f8;
+      padding: 10px;
+      padding-top: 50px
+      margin: 0;
+    }
+
+    h1 {
+      color: #333;
+      margin-top: 20px;
+      font-size: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 350px;
+      margin: 20px auto;
+    }
+
+    #status {
+      margin-top: 15px;
+      font-size: 16px;
+      color: green;
+    }
+
+    button {
+      width: 90%;
+      max-width: 300px;
+      padding: 14px;
+      font-size: 16px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    /* ✅ TESTバナー */
+    #testBanner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: red;
+      color: white;
+      padding: 10px;
+      font-weight: bold;
+      text-align: center;
+      z-index: 999;
+    }
+
+    
+    /* ✅ スマホ専用微調整 */
+    @media (max-width: 480px) {
+
+      h1 {
+        font-size: 18px;
+      }
+
+      button {
+        font-size: 15px;
+        padding: 12px;
+      }
+
+    }
+
+  </style>
+</head>
+
+<body>
+
+<div id="testLabel" style="color:red; font-weight:bold;"></div>
+
+<h1>📷 授業出席＆退席</h1>
+
+<button onclick="startScan()">QR読み取り開始</button>
+
+<div id="reader" style="display:none;"></div>
+
+<p id="guide" style="color:#555; font-size:14px;">
+  ［QRコードをカメラにかざしてください］
+</p>
+
+<p id="status"></p>
+
+<br>
+
+<div id="historyBtnArea" style="margin-top:20px;">
+  <button onclick="goHistory()">
+    出席履歴を見る
+  </button>
+</div>
+
+<br><br>
+<footer style="font-size:12px">
+  Copyright &copy; IWAKUNI Junior College. All Rights Reserved.
+</footer>
+
+<script>
+const beep = new Audio(
+  "https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"
+);
+
+const GAS_URL = "https://script.google.com/a/macros/iwakuni.ac.jp/s/AKfycbxBk1oqNj-BfVSSEPDEREj2blrjhg7JhibThYjLEXY5QPOooEQ1aSRuyF88KXhhGYXT/exec";
+
+let html5QrCode;
+
+
+// ✅ ★ここに追加（カメラ許可のウォームアップ）
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    stream.getTracks().forEach(track => track.stop());
+  })
+  .catch(err => {
+    console.log("カメラ許可が必要です");
+  });
+
+// ✅ TESTモード判定
+const params = new URLSearchParams(window.location.search);
+const isTest = params.get("test") === "1";
+
+// ✅ TEST表示（これを追加）
+window.addEventListener("DOMContentLoaded", function() {
+
+  if (isTest) {
+
+    // 上部に表示
+    document.getElementById("testLabel").innerHTML = "🧪 TESTモード";
+
+    // 既存のバナーも表示（使うなら）
+    const banner = document.getElementById("testBanner");
+    if (banner) {
+      banner.style.display = "block";
+    }
+
+    // ✅ ★ここ追加（履歴ボタン非表示）
+    const historyArea = document.getElementById("historyBtnArea");
+    if (historyArea) {
+      historyArea.style.display = "none";
+    }
+  }
+});
+
+function startScan() {
+
+  document.getElementById("reader").style.display = "block";
+
+  // ✅ ガイド表示変更
+  document.getElementById("guide").innerText =
+    "QRコードを枠に合わせてください";
+
+  html5QrCode = new Html5Qrcode("reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 200 },
+    onScanSuccess,
+    onScanFailure
+  );
+}
+
+function onScanSuccess(decodedText) {
+
+  const parsedUrl = new URL(decodedText);
+  const subjectId = parsedUrl.searchParams.get("subjectId");
+
+  if (!subjectId) {
+    alert("QRエラー");
+    return;
+  }
+
+  const sendUrl = GAS_URL + "?subjectId=" + subjectId;
+
+  // ✅ ユーザーに見えるフィードバック
+  document.getElementById("status").innerText = "✅ 読み取り中...";
+  document.getElementById("guide").innerText = "出席登録しています";
+
+  // ✅ 音・バイブ
+  if (navigator.vibrate) navigator.vibrate(100);
+  beep.play();
+  
+  // ✅ QR停止（重要！！）
+  html5QrCode.stop();
+
+  // ✅ 少し待ってから遷移（UX向上）
+  setTimeout(() => {
+    window.location.href = sendUrl;
+  }, 300);
+}
+
+function onScanFailure(error) {
+  console.log("読み取り中...");
+}
+
+function goHistory() {
+
+  let url = GAS_URL + "?page=history";
+
+  // ✅ TESTモード引き継ぐ
+  if (isTest) {
+    url += "&test=1";
+  }
+
+  window.location.href = url;
+}
+</script>
+
+</body>
+</html>
