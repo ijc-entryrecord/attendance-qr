@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>出席結果</title>
+
+<style>
+body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 20px;
+  margin: 0;
+  background: #f4f6f8;
+}
+
+.card {
+  background: white;
+  padding: 25px;
+  margin: auto;
+  margin-top: 40px;
+  max-width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+h2 {
+  color: green;
+  font-size: 22px;
+}
+
+p {
+  font-size: 16px;
+}
+
+button {
+  margin-top: 20px;
+  width: 90%;
+  max-width: 250px;
+  padding: 14px;
+  font-size: 16px;
+  background: #007bff;
+  color: white;
+  border-radius: 8px;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+  <h2 id="title"></h2>
+  <p id="message"></p>
+  <div id="extra"></div>
+  <p id="count">10秒後に戻ります</p>
+  <button onclick="goBack()">戻る</button>
+</div>
+
+<script>
+
+// ✅ URLパラメータ取得
+const params = new URLSearchParams(window.location.search);
+
+// ✅ 基本メッセージ
+document.getElementById("title").innerText =
+  params.get("title") || "";
+
+document.getElementById("message").innerText =
+  params.get("message") || "";
+
+// ✅ 追加情報（名前・科目・状態）
+const extra = params.get("extra");
+
+if (extra) {
+  const [name, subject, status] = extra.split("|");
+
+  document.getElementById("extra").innerHTML =
+    `<strong>${name}</strong><br>${subject}<br>状態：${status}`;
+}
+
+// ✅ 戻る処理（確実版）
+function goBack() {
+  window.location.href = "./";
+}
+
+// ✅ カウントダウン
+let sec = 10;
+const countEl = document.getElementById("count");
+
+setInterval(() => {
+  sec--;
+
+  if (sec >= 0) {
+    countEl.innerText = sec + "秒後に戻ります";
+  }
+}, 1000);
+
+// ✅ 自動戻り
+setTimeout(() => {
+  goBack();
+}, 10000);
+
+</script>
+
+</body>
+</html>
