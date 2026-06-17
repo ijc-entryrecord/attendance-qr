@@ -73,7 +73,7 @@
     @media (max-width: 480px) {
 
       h1 {
-        font-size: 18px;
+        font-size: 20px;
       }
 
       button {
@@ -194,9 +194,17 @@ window.addEventListener("DOMContentLoaded", function() {
 
 function startScan() {
  
-  // ✅ TESTモードのときは出さない
+  // ✅ TESTは除外
   if (!isTest) {
-    alert("まだログインしていない場合、ログイン画面が表示されます");
+
+    // ✅ まだ一度も表示していなければ出す
+    if (!sessionStorage.getItem("loginAlertShown")) {
+
+      alert("まだログインしていない場合、ログイン画面が表示されます");
+
+      // ✅ 一度表示した記録を残す
+      sessionStorage.setItem("loginAlertShown", "1");
+    }
   }
   
   document.getElementById("reader").style.display = "block";
@@ -259,6 +267,32 @@ function goHistory() {
 
   window.location.href = url;
 }
+
+// ✅ ★戻ったとき完全リセット（修正版）
+window.addEventListener("pageshow", function() {
+
+  // ✅ カメラ停止（ここが超重要）
+  if (typeof html5QrCode !== "undefined" && html5QrCode) {
+    try {
+      html5QrCode.stop().catch(() => {});
+    } catch (e) {}
+  }
+
+  // ✅ 表示リセット
+  const status = document.getElementById("status");
+  if (status) status.innerText = "";
+
+  const guide = document.getElementById("guide");
+  if (guide) {
+    guide.innerText = "［QRコードをカメラにかざしてください］";
+  }
+
+  const reader = document.getElementById("reader");
+  if (reader) {
+    reader.style.display = "none";
+  }
+
+});
 </script>
 
 </body>
