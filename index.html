@@ -138,6 +138,19 @@ navigator.mediaDevices.getUserMedia({ video: true })
 const params = new URLSearchParams(window.location.search);
 const isTest = params.get("test") === "1";
 
+// ✅ ★ここ追加（学生用ログイントリガー）
+if (!isTest) {
+
+  fetch(GAS_URL + "?auth=1", { credentials: "include" })
+    .then(() => {
+      console.log("認証OK");
+    })
+    .catch(() => {
+      console.log("ログインが必要です");
+    });
+
+}
+
 // ✅ TEST表示（これを追加）
 window.addEventListener("DOMContentLoaded", function() {
 
